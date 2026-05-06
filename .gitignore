@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+coverage/
+.DS_Store
+
+# Documentation & Plans
+docs/
+**/*-plan.md
+**/*-PLAN.md
+**/*plan*.md
+
+# Next.js & Build artifacts
+.next/
+out/
+*.tsbuildinfo

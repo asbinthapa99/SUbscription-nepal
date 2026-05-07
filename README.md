@@ -1,231 +1,365 @@
-# FlowAI Nepal Frontend
+# FlowAI Nepal
 
-A modern Next.js 16+ frontend for FlowAI Nepal - Premium AI tools for Nepali students, developers, and freelancers. Pay in NPR via eSewa, Khalti, or IME Pay.
+Nepal's premium AI subscriptions and services marketplace. Users pay in NPR via local payment providers (eSewa, Khalti, IME Pay) and get API-proxied access to AI tools, subscription plans, and managed AI services — no shared credentials, no raw key exposure.
 
-## Features
+---
 
-- **Modern Stack**: Next.js 16, React 19, TypeScript, Tailwind CSS 4
-- **Authentication**: Email/password signup, login, password reset with dev email flow
-- **User Profile**: Protected routes, user dropdown, session management
-- **Marketing Pages**: Hero section, pricing, services, tools showcase
-- **Payment Integration Ready**: Subscription plans and payment flows
-- **Design System**: shadcn/ui components with custom Nepali color palette
+## Project Structure
 
-## Quick Start
+```
+ai nepal/
+├── frontend/    # Next.js 16 app (TypeScript + Tailwind CSS + shadcn/ui)
+└── backend/     # Express + Prisma REST API (TypeScript + PostgreSQL)
+```
 
-### Prerequisites
+---
 
-- Node.js 18+ (verify with `node --version`)
-- npm or yarn
+## Frontend
 
-### Installation
+### Stack
+
+| Tool | Version |
+|---|---|
+| Next.js | 16.2 |
+| React | 19 |
+| TypeScript | 5 |
+| Tailwind CSS | 4 |
+| shadcn/ui | 4 |
+| Framer Motion | 12 |
+| Recharts | 3 |
+| React Hook Form + Zod | latest |
+| Sonner (toasts) | 2 |
+| next-themes | 0.4 |
+
+### Pages
+
+| Route | Description |
+|---|---|
+| `/` | Public marketing homepage |
+| `/pricing` | Subscription plans & pricing |
+| `/services` | AI services catalog |
+| `/tools` | AI tools listing |
+| `/login` | User login |
+| `/register` | User registration |
+| `/forgot-password` | Password reset request |
+| `/reset-password` | Password reset form |
+| `/dashboard` | User dashboard |
+| `/chat` | AI chat interface |
+| `/billing` | Billing & payment history |
+| `/subscriptions` | Subscription management |
+| `/subscriptions/[slug]` | Subscription detail |
+| `/profile` | User profile |
+| `/settings` | Account settings |
+| `/admin` | Admin panel |
+| `/privacy` | Privacy policy |
+| `/terms` | Terms of service |
+
+### Dev Setup
 
 ```bash
-# Install dependencies
+cd frontend
 npm install
-
-# Set up environment variables
-cp .env.example .env.local
-# Edit .env.local and set NEXT_PUBLIC_API_URL (default: http://localhost:4000)
+cp .env.local.example .env.local   # set NEXT_PUBLIC_API_URL
+npm run dev                         # http://localhost:3000
 ```
 
-### Development Server
+---
+
+## Backend
+
+### Stack
+
+| Tool | Purpose |
+|---|---|
+| Node.js + Express | HTTP server |
+| TypeScript | Type safety |
+| Prisma | ORM |
+| PostgreSQL | Database |
+| JWT | Authentication |
+| Zod | Schema validation |
+| OpenAI SDK | AI proxy |
+| Helmet + Rate Limit | Security |
+| Nodemailer | Email (password reset) |
+
+### API Routes
+
+**Health**
+```
+GET  /health
+```
+
+**Auth**
+```
+POST /api/auth/register
+POST /api/auth/login
+GET  /api/auth/me
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
+```
+
+**Plans / Services / Tools**
+```
+GET  /api/plans
+GET  /api/services
+GET  /api/tools
+```
+
+**Subscriptions**
+```
+GET  /api/subscription/current
+```
+
+**Usage**
+```
+GET  /api/usage/summary
+```
+
+**AI Chat (proxied)**
+```
+POST /api/ai/chat
+```
+
+**Payments**
+```
+POST /api/payments/initiate
+POST /api/payments/verify-manual
+```
+
+**Service Requests**
+```
+POST  /api/service-requests
+GET   /api/service-requests/admin
+PATCH /api/service-requests/admin/:id/status
+```
+
+**Admin**
+```
+GET  /api/admin/summary
+GET  /api/admin/users
+GET  /api/admin/subscriptions
+GET  /api/admin/payments
+GET  /api/admin/usage
+GET  /api/admin/plans
+PUT  /api/admin/plans
+GET  /api/admin/services
+PUT  /api/admin/services
+GET  /api/admin/tools
+PUT  /api/admin/tools
+```
+
+### Dev Setup
 
 ```bash
-npm run dev
-# Open http://localhost:3000
+cd backend
+npm install
+cp .env.example .env          # fill in required vars
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
+npm run dev                   # http://localhost:4000
 ```
 
-### Build & Run Production
-
-```bash
-npm run build
-npm run start
-```
-
-## Environment Variables
-
-Create `.env.local`:
+### Environment Variables
 
 ```env
-# Backend API endpoint
-NEXT_PUBLIC_API_URL=http://localhost:4000
+# Required
+NODE_ENV=development
+PORT=4000
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/flowai_nepal?schema=public
+JWT_SECRET=replace-with-a-long-random-secret-min-24-chars
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=http://localhost:3000
+FRONTEND_URL=http://localhost:3000
 
-# Optional: Frontend domain for password reset emails
-# FRONTEND_URL=http://localhost:3000
+# AI (set AI_MOCK_ENABLED=true for local dev without OpenAI billing)
+OPENAI_API_KEY=
+OPENAI_DEFAULT_MODEL=gpt-4.1-mini
+AI_MOCK_ENABLED=true
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX=120
+
+# Email (optional for password reset)
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=FlowAI Nepal <no-reply@flowainepal.local>
 ```
 
-## Key Pages
-
-| Page | Path | Auth Required | Purpose |
-|------|------|---------------|---------|
-| Home | `/` | No | Marketing homepage |
-| Login | `/login` | No | Sign in with email/password |
-| Register | `/register` | No | Create new account |
-| Forgot Password | `/forgot-password` | No | Request password reset token |
-| Reset Password | `/reset-password?token=...` | No | Set new password |
-| Profile | `/profile` | Yes | User account details (redirects to `/login` if not authenticated) |
-| Pricing | `/pricing` | No | Subscription plans |
-| Services | `/services` | No | AI services showcase |
-| Tools | `/tools` | No | Available tools |
-
-## Authentication Flow
-
-### Sign Up / Sign In
-
-1. User submits email + password at `/register` or `/login`
-2. Frontend sends request to `POST /api/auth/register` or `POST /api/auth/login`
-3. Backend validates and returns `{ user, token }` + sets HttpOnly `token` cookie
-4. Frontend stores token in AuthProvider state (cookie-aware)
-5. Navbar shows user name; login/register buttons hidden
-6. User can access `/profile` (protected)
-
-### Password Reset
-
-1. User visits `/forgot-password` and submits email
-2. Frontend POST to `POST /api/auth/forgot` (backend creates reset token, sends email via dev mailer)
-3. Email contains link: `http://localhost:3000/reset-password?token=<reset-token>`
-4. User clicks link, sees reset form
-5. Submits new password to `POST /api/auth/reset { token, password }`
-6. Token is marked as used, user can now sign in with new password
-
-### Logout
-
-- Click "Log out" in navbar user dropdown
-- Frontend calls `POST /api/auth/logout`
-- Backend clears HttpOnly cookie
-- Redirects to `/`
-
-## Development Notes
-
-### Component Structure
-
-- `src/app/` — Next.js pages and layouts
-- `src/components/` — React components (layout, marketing sections, UI)
-- `src/context/` — React context (AuthProvider for auth state)
-- `src/lib/` — Utilities (API client, formatters, UI helpers)
-- `src/types/` — TypeScript type definitions
-- `src/app/globals.css` — Global styles, Tailwind directives, animations
-
-### API Client
-
-The frontend API client is in `src/lib/api/auth.ts`:
-
-```typescript
-import authApi from "@/lib/api/auth";
-
-// Sign up
-await authApi.apiRegister({ name, email, password });
-
-// Sign in
-await authApi.apiLogin({ email, password });
-
-// Get current user (uses cookie)
-await authApi.apiMe();
-
-// Reset password
-await authApi.apiResetPassword(token, password);
-```
-
-### Auth Provider
-
-Access auth state in any component using `useAuth()`:
-
-```typescript
-import { useAuth } from "@/context/AuthProvider";
-
-export function MyComponent() {
-  const { user, loading, login, logout } = useAuth();
-
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <button onClick={() => /* navigate to login */ }>Sign in</button>;
-  
-  return <div>Welcome, {user.name}!</div>;
-}
-```
-
-## Styling & Design System
-
-- **Colors**: Nepali Crimson (#dc143c), Himalayan Blue (#1e6fbf), Success Green (#10b981)
-- **Typography**: Manrope (headings), Inter (body), JetBrains Mono (code)
-- **Components**: shadcn/ui (Card, Button, Input, etc.)
-- **Tailwind CSS 4**: PostCSS with custom utilities
-- **Animations**: Aurora, float, and custom entrance animations
-
-## Linting
+### Database
 
 ```bash
-npm run lint
+npm run prisma:studio     # visual DB browser
+npm run prisma:migrate    # apply migrations
+npm run prisma:seed       # seed plans, services, tools
 ```
 
-## Deployment
+---
 
-### Vercel (Recommended)
+## Data Models
 
-```bash
-# Install Vercel CLI
-npm i -g vercel
+### User
+| Field | Type | Notes |
+|---|---|---|
+| `id` | cuid | Primary key |
+| `name` | String | |
+| `email` | String | Unique |
+| `passwordHash` | String | bcrypt |
+| `role` | `USER` \| `ADMIN` | Default: USER |
 
-# Deploy
-vercel
+### Plan
+| Field | Type | Notes |
+|---|---|---|
+| `planType` | Enum | FREE / BASIC / PRO / PREMIUM / TEAM / DEVELOPER / ENTERPRISE |
+| `priceNpr` | Int | Price in Nepali Rupees |
+| `dailyPromptLimit` | Int | Max prompts per day |
+| `monthlyTokenLimit` | Int | Max tokens per month |
+| `allowedModels` | JSON | e.g. `["gpt-4.1-mini", "gpt-4o"]` |
+| `includedTools` | JSON | List of tool keys |
+
+### Subscription
+| Field | Type | Notes |
+|---|---|---|
+| `planType` | Enum | Linked plan tier |
+| `productSlug` | String? | For product-based subs (e.g. ChatGPT Plus) |
+| `status` | Enum | ACTIVE / EXPIRED / CANCELLED / TRIAL |
+| `durationMonths` | Int | Default: 1 |
+| `startsAt` / `expiresAt` | DateTime | Subscription window |
+
+### Payment
+| Field | Type | Notes |
+|---|---|---|
+| `provider` | Enum | ESEWA / KHALTI / CONNECTIPS / MANUAL |
+| `amountNpr` | Int | Amount paid in NPR |
+| `status` | Enum | PENDING / PAID / FAILED / CANCELLED / REFUNDED / MANUAL_REVIEW |
+| `transactionId` | String? | Unique, from payment provider |
+| `verifiedAt` | DateTime? | Set on admin approval |
+
+### UsageLog
+| Field | Type | Notes |
+|---|---|---|
+| `provider` | Enum | OPENAI (extendable) |
+| `model` | String | e.g. `gpt-4.1-mini` |
+| `promptTokens` | Int | |
+| `completionTokens` | Int | |
+| `totalTokens` | Int | |
+| `requestCount` | Int | Default: 1 |
+
+### Other Models
+- **`AiServicePackage`** — Managed AI service offerings with slug, category, starting price, and included tools.
+- **`AiTool`** — Individual AI tools with key, category, accent colour, and external href.
+- **`SubscriptionProduct`** — Specific product subscriptions (e.g. ChatGPT Plus, Midjourney) with multi-duration pricing stored as JSON.
+- **`ServiceRequest`** — Inbound enquiries from users/guests for a specific service.
+- **`SiteContent`** — Key-value CMS for admin-editable site content.
+- **`PasswordResetToken`** — Single-use, expiring tokens for password reset emails.
+
+---
+
+## Plan Tiers
+
+| Plan | Type | Target User |
+|---|---|---|
+| Free | FREE | Exploration / trial |
+| Basic | BASIC | Casual users |
+| Pro | PRO | Power users |
+| Premium | PREMIUM | Heavy users |
+| Team | TEAM | Small teams |
+| Developer | DEVELOPER | API / integration builders |
+| Enterprise | ENTERPRISE | Businesses |
+
+All prices are in **NPR**. Limits (daily prompts + monthly tokens) and allowed models are set per plan and enforced server-side.
+
+---
+
+## Auth Flow
+
+```
+1. POST /api/auth/register  →  creates User, returns JWT
+2. POST /api/auth/login     →  validates password hash, returns JWT
+3. JWT stored as httpOnly cookie (credentials: "include" on all fetches)
+4. GET /api/auth/me         →  returns current user from JWT payload
+5. 401 response             →  frontend auto-redirects to /login?expired=true
 ```
 
-Set `NEXT_PUBLIC_API_URL` environment variable in Vercel dashboard.
-
-### Docker
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package.json . && npm ci
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
+**Password Reset:**
+```
+1. POST /api/auth/forgot-password  →  generates PasswordResetToken, emails link
+2. POST /api/auth/reset-password   →  validates token (single-use, expiring), updates hash
 ```
 
-Build and run:
-```bash
-docker build -t flowainepal-frontend .
-docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://api.example.com flowainepal-frontend
+---
+
+## Payment Flow
+
+```
+1. User selects plan/product → POST /api/payments/initiate
+   → creates Payment record (status: PENDING)
+
+2. User completes payment via eSewa / Khalti / IME Pay / bank transfer
+
+3. User submits transaction ID → POST /api/payments/verify-manual
+   → sets Payment status to MANUAL_REVIEW
+
+4. Admin reviews in /admin panel → PATCH approves or rejects
+   → on approval: Payment status = PAID, Subscription created/extended
 ```
 
-## Troubleshooting
+> Automated provider callbacks (webhooks) can replace step 3–4 in future — the `transactionId` field is already unique-indexed for idempotency.
 
-### Auth not working
+---
 
-- Check backend is running on `NEXT_PUBLIC_API_URL` (default: `http://localhost:4000`)
-- Verify `/api/auth/me` responds with user data
-- Check browser cookies (look for `token` cookie set by backend)
-- Clear browser cache and localStorage (`auth_token_v1`)
+## AI Proxy Flow
 
-### Styles not loading
+```
+1. Frontend POST /api/ai/chat  { message, model? }
+2. Backend checks:
+   a. Valid JWT (authenticated user)
+   b. Active subscription exists
+   c. Daily prompt limit not exceeded
+   d. Monthly token limit not exceeded
+3. If AI_MOCK_ENABLED=true  →  returns mock response (no OpenAI billing)
+4. Otherwise               →  proxies to OpenAI, streams response
+5. UsageLog row written with token counts
+```
 
-- Run `npm install` to ensure Tailwind dependencies are installed
-- Clear `.next/` folder: `rm -rf .next && npm run dev`
-- Verify `postcss.config.mjs` and `tailwind.config.ts` are present
+The OpenAI API key **never leaves the server**. The frontend only ever calls `/api/ai/chat`.
 
-### Pages not redirecting
+---
 
-- Check `useRouter()` is from `next/navigation` (not `next/router`)
-- Verify AuthProvider wraps the app (in `src/app/layout.tsx`)
+## Frontend API Client
 
-## Contributing
+All API calls go through `src/lib/api/client.ts`:
 
-1. Fork the repo
-2. Create feature branch: `git checkout -b feature/my-feature`
-3. Commit: `git commit -am 'Add feature'`
-4. Push: `git push origin feature/my-feature`
-5. Open a PR
+- Base URL from `NEXT_PUBLIC_API_URL` env var (defaults to `http://localhost:4000`)
+- Sends `credentials: "include"` on every request (httpOnly cookie auth)
+- Parses JSON responses; falls back to raw text on parse failure
+- On `401` → auto-redirects to `/login?expired=true` (except on public routes)
+- Throws `Error` with server's `message` field for all non-OK responses
 
-## License
+---
 
-MIT
+## Security Rules
 
-## Support
+- `OPENAI_API_KEY` is **never** exposed to the frontend.
+- AI requests require a valid JWT and an active subscription.
+- Usage limits are enforced server-side before every AI call.
+- Payment verification is server-side only.
+- Manual payment approval requires the `ADMIN` role.
+- Plans, services, and tools are editable only via authenticated admin routes.
 
-For issues, questions, or suggestions:
-- Open an issue on GitHub
-- Check existing documentation in `docs/`
-- Contact: support@flowainepal.local
+---
 
+## Docs
+
+- [Project Plan](./docs/project-plan.md)
+- [UI Design Plan](./docs/ui-design-plan.md)
+- [Frontend Architecture](./docs/frontend-architecture.md)
+- [Premium Frontend Plan](./docs/premium-frontend-plan.md)
+- [Subscription Plans](./docs/subscription-plans.md)
+- [Admin Panel Plan](./docs/admin-panel-plan.md)
+- [Payment Plan](./docs/payment-plan.md)
+- [Testing & Deployment Plan](./docs/testing-deployment-plan.md)
+- [Backend Plan](./docs/backend-later-plan.md)
+- [AI Handoff Notes](./docs/ai-handoff.md)

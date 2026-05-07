@@ -39,22 +39,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(email: string, password: string) {
     setLoading(true);
-    const res = await authApi.apiLogin({ email, password });
-    const t = res.token;
-    setToken(t || null);
-    setUser(res.user || null);
-    setLoading(false);
-    router.push("/dashboard");
+    try {
+      const res = await authApi.apiLogin({ email, password });
+      setToken(res.token || null);
+      setUser(res.user || null);
+      router.push("/dashboard");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function register(name: string, email: string, password: string) {
     setLoading(true);
-    const res = await authApi.apiRegister({ name, email, password });
-    const t = res.token;
-    setToken(t || null);
-    setUser(res.user || null);
-    setLoading(false);
-    router.push("/dashboard");
+    try {
+      const res = await authApi.apiRegister({ name, email, password });
+      setToken(res.token || null);
+      setUser(res.user || null);
+      router.push("/dashboard");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function logout() {

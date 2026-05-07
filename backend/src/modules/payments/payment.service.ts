@@ -1,10 +1,9 @@
-import { PaymentProvider, PaymentStatus, PlanType } from "@prisma/client";
+import { PaymentProvider, PaymentStatus, PlanType, SubscriptionStatus } from "@prisma/client";
 import { prisma } from "../../db/prisma.js";
 import { env } from "../../config/env.js";
 import { ApiError } from "../../utils/api-error.js";
 import { getProductBySlug, getProductPrice } from "../../config/subscription-products.js";
 import { getPlanByType } from "../plans/plans.service.js";
-import { activateSubscription } from "../subscriptions/subscription.service.js";
 import { sendPaymentActivatedEmail, sendPaymentInitiatedEmail } from "../../utils/mailer.js";
 
 const addMonths = (date: Date, months: number) => {
@@ -139,21 +138,37 @@ export const verifyManualPayment = async (input: {
   const durationMonths = payment.durationMonths ?? 1;
   const expiresAt = addMonths(new Date(), durationMonths);
 
-  const updated = await prisma.payment.update({
-    where: { id: payment.id },
-    data: {
-      status: PaymentStatus.PAID,
-      transactionId: input.transactionId,
-      verifiedAt: new Date(),
-    },
-  });
+  const { updated, subscription } = await prisma.$transaction(async (tx) => {
+    const updatedPayment = await tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: PaymentStatus.PAID,
+        transactionId: input.transactionId,
+        verifiedAt: new Date(),
+      },
+    });
 
-  const subscription = await activateSubscription({
-    userId: payment.userId,
-    planType: payment.planType,
-    productSlug: payment.productSlug ?? undefined,
-    durationMonths,
-    expiresAt,
+    await tx.subscription.updateMany({
+      where: {
+        userId: payment.userId,
+        status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL] }
+      },
+      data: { status: SubscriptionStatus.CANCELLED }
+    });
+
+    const newSubscription = await tx.subscription.create({
+      data: {
+        userId: payment.userId,
+        planType: payment.planType,
+        productSlug: payment.productSlug ?? null,
+        durationMonths,
+        startsAt: new Date(),
+        expiresAt,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
+
+    return { updated: updatedPayment, subscription: newSubscription };
   });
 
   const user = await prisma.user.findUnique({

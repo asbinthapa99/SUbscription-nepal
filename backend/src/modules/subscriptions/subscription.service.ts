@@ -40,28 +40,26 @@ export const activateSubscription = async (input: {
   startsAt?: Date;
   expiresAt: Date;
 }) => {
-  await prisma.subscription.updateMany({
-    where: {
-      userId: input.userId,
-      status: {
-        in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL]
-      }
-    },
-    data: {
-      status: SubscriptionStatus.CANCELLED
-    }
-  });
+  return prisma.$transaction(async (tx) => {
+    await tx.subscription.updateMany({
+      where: {
+        userId: input.userId,
+        status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL] }
+      },
+      data: { status: SubscriptionStatus.CANCELLED }
+    });
 
-  return prisma.subscription.create({
-    data: {
-      userId: input.userId,
-      planType: input.planType,
-      productSlug: input.productSlug ?? null,
-      durationMonths: input.durationMonths ?? 1,
-      startsAt: input.startsAt ?? new Date(),
-      expiresAt: input.expiresAt,
-      status: SubscriptionStatus.ACTIVE,
-    },
+    return tx.subscription.create({
+      data: {
+        userId: input.userId,
+        planType: input.planType,
+        productSlug: input.productSlug ?? null,
+        durationMonths: input.durationMonths ?? 1,
+        startsAt: input.startsAt ?? new Date(),
+        expiresAt: input.expiresAt,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
   });
 };
 

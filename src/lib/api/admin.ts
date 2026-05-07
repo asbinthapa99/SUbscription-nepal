@@ -45,3 +45,21 @@ export const verifyAdminPayment = (paymentId: string, transactionId: string) =>
     method: "PATCH",
     body: JSON.stringify({ transactionId }),
   });
+
+export interface AdminContent {
+  id: string;
+  section: string;
+  key: string;
+  value: string;
+  updatedAt: string;
+}
+
+export const getAdminContent = () =>
+  apiFetch<{ content: AdminContent[] }>("/api/admin/content");
+
+export const updateAdminContent = (key: string, value: string) =>
+  apiFetch<{ item: AdminContent }>(`/api/admin/content/${key}`, {
+    method: "PATCH",
+    body: JSON.stringify({ value }),
+  });
+

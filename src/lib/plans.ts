@@ -1,0 +1,78 @@
+import type { PricingPlan } from "@/types/plan";
+
+export const pricingPlans: PricingPlan[] = [
+  // 1 USD ≈ 135 NPR | ChatGPT Plus $20 = Rs 2,700 | Claude Pro $20 = Rs 2,700
+  {
+    id: "free",
+    name: "Starter",
+    description: "Try AI for free. No card, no commitment.",
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    promptLimitDaily: 20,
+    tokenLimitMonthly: 25000,
+    includedTools: ["Basic AI chat", "Prompt templates"],
+    features: [
+      "20 messages per day",
+      "GPT-3.5 Turbo access",
+      "Prompt templates library",
+      "Email support",
+    ],
+    featured: false,
+    cta: "Start for free",
+    href: "/register",
+    isActive: true,
+    isPublic: true,
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    description: "GPT-4o + Claude. Cheaper than buying both direct (Rs 5,400/mo).",
+    monthlyPrice: 1499,
+    yearlyPrice: 1199,
+    promptLimitDaily: null,
+    tokenLimitMonthly: 200000,
+    includedTools: ["GPT-4o", "Claude 3.5 Sonnet", "Usage analytics", "API access"],
+    features: [
+      "Unlimited messages",
+      "GPT-4o + Claude 3.5 Sonnet",
+      "API access (200K tokens/mo)",
+      "Usage analytics dashboard",
+      "Priority support",
+      "Nepali + English interface",
+    ],
+    badge: "Most popular",
+    featured: true,
+    cta: "Get Pro — Rs 1,499/mo",
+    href: "/register?plan=pro",
+    isActive: true,
+    isPublic: true,
+  },
+  {
+    id: "team",
+    name: "Team",
+    description: "Shared AI access for agencies and businesses.",
+    monthlyPrice: 3999,
+    yearlyPrice: 3199,
+    promptLimitDaily: null,
+    tokenLimitMonthly: 1000000,
+    includedTools: ["Everything in Pro", "5 seats", "Admin controls"],
+    features: [
+      "Everything in Pro",
+      "5 team seats included",
+      "1M tokens/mo API access",
+      "Admin panel + controls",
+      "Custom usage limits per seat",
+      "Dedicated support channel",
+      "VAT invoice billing",
+    ],
+    featured: false,
+    cta: "Get Team",
+    href: "/register?plan=team",
+    isActive: true,
+    isPublic: true,
+  },
+];
+
+export const publicPricingPlans = pricingPlans.filter(
+  (plan) => plan.isActive && plan.isPublic,
+);

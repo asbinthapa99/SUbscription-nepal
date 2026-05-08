@@ -3,9 +3,10 @@ import { ApiError } from "../../utils/api-error.js";
 import { comparePassword, hashPassword } from "../../utils/password.js";
 import { signAuthToken } from "../../utils/jwt.js";
 import crypto from "crypto";
-import { addMinutes } from "date-fns";
+import { addMinutes, addHours } from "date-fns";
 
 const RESET_TOKEN_TTL_MINUTES = 30;
+const VERIFY_TOKEN_TTL_HOURS = 24;
 
 export const registerUser = async (input: { name: string; email: string; password: string }) => {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
@@ -63,6 +64,7 @@ export const getCurrentUser = async (userId: string) => {
       name: true,
       email: true,
       role: true,
+      emailVerifiedAt: true,
       createdAt: true
     }
   });
@@ -72,6 +74,26 @@ export const getCurrentUser = async (userId: string) => {
   }
 
   return user;
+};
+
+export const createEmailVerificationToken = async (userId: string): Promise<string> => {
+  await prisma.emailVerificationToken.deleteMany({ where: { userId } });
+  const token = crypto.randomBytes(32).toString("hex");
+  await prisma.emailVerificationToken.create({
+    data: { userId, token, expiresAt: addHours(new Date(), VERIFY_TOKEN_TTL_HOURS) }
+  });
+  return token;
+};
+
+export const verifyEmail = async (token: string) => {
+  const record = await prisma.emailVerificationToken.findUnique({ where: { token } });
+  if (!record || record.expiresAt < new Date()) {
+    throw new ApiError(400, "Invalid or expired verification link");
+  }
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: record.userId }, data: { emailVerifiedAt: new Date() } }),
+    prisma.emailVerificationToken.delete({ where: { id: record.id } }),
+  ]);
 };
 
 export const createPasswordReset = async (email: string): Promise<{ token: string } | null> => {

@@ -50,18 +50,31 @@ enum AiProvider {
 }
 
 model User {
-  id              String           @id @default(cuid())
-  name            String
-  email           String           @unique
-  passwordHash    String
-  role            Role             @default(USER)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  subscriptions        Subscription[]
-  usageLogs            UsageLog[]
-  payments             Payment[]
-  serviceRequests      ServiceRequest[]
-  passwordResetTokens  PasswordResetToken[]
+  id                      String                    @id @default(cuid())
+  name                    String
+  email                   String                    @unique
+  passwordHash            String
+  role                    Role                      @default(USER)
+  emailVerifiedAt         DateTime?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  subscriptions           Subscription[]
+  usageLogs               UsageLog[]
+  payments                Payment[]
+  serviceRequests         ServiceRequest[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model PasswordResetToken {

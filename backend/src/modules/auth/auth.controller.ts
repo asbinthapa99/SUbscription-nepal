@@ -1,23 +1,43 @@
 import { asyncHandler } from "../../utils/async-handler.js";
-import { getCurrentUser, loginUser, registerUser, createPasswordReset, consumePasswordReset } from "./auth.service.js";
+import { getCurrentUser, loginUser, registerUser, createPasswordReset, consumePasswordReset, createEmailVerificationToken, verifyEmail } from "./auth.service.js";
 import { loginSchema, registerSchema, forgotSchema, resetSchema } from "./auth.validation.js";
-import { sendPasswordResetEmail } from "../../utils/mailer.js";
+import { sendPasswordResetEmail, sendEmailVerificationEmail } from "../../utils/mailer.js";
 import { env } from "../../config/env.js";
 
 export const register = asyncHandler(async (req, res) => {
   const input = registerSchema.parse(req.body);
   const result = await registerUser(input);
 
-  // Set HttpOnly cookie for server-side sessions
-  const token = result.token;
-  res.cookie("token", token, {
+  res.cookie("token", result.token, {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
+  const verifyToken = await createEmailVerificationToken(result.user.id);
+  const verifyUrl = `${env.FRONTEND_URL}/verify-email?token=${encodeURIComponent(verifyToken)}`;
+  sendEmailVerificationEmail(result.user.email, verifyUrl).catch(() => {});
+
   res.status(201).json(result);
+});
+
+export const resendVerification = asyncHandler(async (req, res) => {
+  const user = await getCurrentUser(req.user!.id);
+  if (user.emailVerifiedAt) {
+    res.json({ message: "Email already verified" });
+    return;
+  }
+  const verifyToken = await createEmailVerificationToken(user.id);
+  const verifyUrl = `${env.FRONTEND_URL}/verify-email?token=${encodeURIComponent(verifyToken)}`;
+  sendEmailVerificationEmail(user.email, verifyUrl).catch(() => {});
+  res.json({ message: "Verification email sent" });
+});
+
+export const verifyEmailHandler = asyncHandler(async (req, res) => {
+  const token = String(req.query.token || "");
+  await verifyEmail(token);
+  res.json({ message: "Email verified successfully" });
 });
 
 export const login = asyncHandler(async (req, res) => {

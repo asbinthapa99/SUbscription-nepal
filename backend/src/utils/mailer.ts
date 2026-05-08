@@ -33,6 +33,26 @@ export async function getTransporter() {
   return transporter;
 }
 
+export async function sendEmailVerificationEmail(to: string, verifyUrl: string) {
+  const t = await getTransporter();
+  const info = await t.sendMail({
+    from: env.SMTP_FROM,
+    to,
+    subject: "Verify your FlowAI Nepal email address",
+    text: `Please verify your email by visiting: ${verifyUrl}\n\nThis link expires in 24 hours.`,
+    html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+      <h2>Verify your email</h2>
+      <p>Click the button below to verify your FlowAI Nepal account.</p>
+      <a href="${verifyUrl}" style="display:inline-block;background:#dc143c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Verify Email</a>
+      <p style="margin-top:16px;color:#64748b;font-size:13px">This link expires in 24 hours. If you didn't create an account, ignore this email.</p>
+    </div>`,
+  });
+  if (!env.SMTP_HOST) {
+    console.info("Verification email preview URL:", nodemailer.getTestMessageUrl(info));
+  }
+  return info;
+}
+
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
   const t = await getTransporter();
   const info = await t.sendMail({

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import authApi from "@/lib/api/auth";
+import { apiFetch } from "@/lib/api/client";
 
 type User = { id: string; name: string; email: string; role?: string } | null;
 
@@ -16,8 +17,6 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-const TOKEN_KEY = "auth_token_v1";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null);
@@ -62,8 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   function logout() {
-    // Attempt to clear server cookie by calling logout endpoint
-    fetch((process.env.NEXT_PUBLIC_API_URL || "") + "/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+    apiFetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     setToken(null);
     setUser(null);
     router.push("/");

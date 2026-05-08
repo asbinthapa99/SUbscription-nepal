@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -10,8 +10,11 @@ import {
   Home,
   LogOut,
   ShieldCheck,
+  MailWarning,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthProvider";
+import { apiFetch } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 const sidebarLinks = [
@@ -28,6 +31,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [verifyBanner, setVerifyBanner] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
+
+  useEffect(() => {
+    if (user && !user.emailVerifiedAt) setVerifyBanner(true);
+  }, [user]);
+
+  async function handleResend() {
+    try { await apiFetch("/api/auth/resend-verification", { method: "POST" }); setResendSent(true); } catch { /* ignore */ }
+  }
 
   useEffect(() => {
     if (!loading && !user) {
@@ -150,6 +163,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <span className="text-white text-sm font-medium hidden sm:block">{user.name}</span>
           </div>
         </header>
+
+        {/* Email verification banner */}
+        {verifyBanner && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-amber-400 text-xs font-medium">
+              <MailWarning className="w-4 h-4 flex-shrink-0" />
+              <span>Please verify your email address to secure your account.</span>
+              {!resendSent ? (
+                <button onClick={handleResend} className="underline underline-offset-2 font-bold hover:text-amber-300">Resend link</button>
+              ) : <span className="font-bold text-emerald-400">Sent!</span>}
+            </div>
+            <button onClick={() => setVerifyBanner(false)} className="text-amber-400/60 hover:text-amber-400"><X className="w-4 h-4" /></button>
+          </div>
+        )}
 
         {/* Page content */}
         <main className="flex-1 p-4 md:p-6 overflow-auto">

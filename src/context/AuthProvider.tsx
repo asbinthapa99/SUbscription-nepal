@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import authApi from "@/lib/api/auth";
 import { apiFetch } from "@/lib/api/client";
 
-type User = { id: string; name: string; email: string; role?: string } | null;
+type User = { id: string; name: string; email: string; role?: string; emailVerifiedAt?: string | null } | null;
 
 type AuthContextValue = {
   user: User;

@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PlanType {
+  FREE
+  BASIC
+  PRO
+  PREMIUM
+  TEAM
+  DEVELOPER
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  TRIAL
+}
+
+enum PaymentProvider {
+  ESEWA
+  KHALTI
+  CONNECTIPS
+  MANUAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+  MANUAL_REVIEW
+}
+
+enum AiProvider {
+  OPENAI
+}
+
+model User {
+  id                      String                    @id @default(cuid())
+  name                    String
+  email                   String                    @unique
+  passwordHash            String
+  role                    Role                      @default(USER)
+  emailVerifiedAt         DateTime?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  subscriptions           Subscription[]
+  usageLogs               UsageLog[]
+  payments                Payment[]
+  serviceRequests         ServiceRequest[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model Plan {
+  id                String   @id @default(cuid())
+  planType          PlanType @unique
+  name              String
+  description       String?
+  priceNpr          Int
+  dailyPromptLimit  Int
+  monthlyTokenLimit Int
+  allowedModels     Json
+  includedTools     Json
+  badge             String?
+  isPublic          Boolean  @default(true)
+  isActive          Boolean  @default(true)
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([isPublic, isActive, sortOrder])
+}
+
+model AiServicePackage {
+  id               String   @id @default(cuid())
+  title            String
+  slug             String   @unique
+  description      String
+  category         String
+  startingPriceNpr Int
+  includedTools    Json
+  isFeatured       Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isActive, isFeatured, sortOrder])
+}
+
+model AiTool {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  title       String
+  description String
+  category    String
+  accent      String?
+  href        String?
+  isFeatured  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, isFeatured, sortOrder])
+}
+
+model ServiceRequest {
+  id          String   @id @default(cuid())
+  userId      String?
+  serviceSlug String
+  name        String
+  email       String
+  phone       String?
+  message     String
+  budgetNpr   Int?
+  status      String   @default("NEW")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([serviceSlug, status])
+  @@index([userId, createdAt])
+}
+
+model Subscription {
+  id             String             @id @default(cuid())
+  userId         String
+  planType       PlanType
+  productSlug    String?
+  durationMonths Int                @default(1)
+  status         SubscriptionStatus @default(ACTIVE)
+  startsAt       DateTime           @default(now())
+  expiresAt      DateTime
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([expiresAt])
+}
+
+model UsageLog {
+  id               String     @id @default(cuid())
+  userId           String
+  provider         AiProvider @default(OPENAI)
+  model            String
+  promptTokens     Int        @default(0)
+  completionTokens Int        @default(0)
+  totalTokens      Int        @default(0)
+  requestCount     Int        @default(1)
+  createdAt        DateTime   @default(now())
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Payment {
+  id             String          @id @default(cuid())
+  userId         String
+  provider       PaymentProvider
+  amountNpr      Int
+  status         PaymentStatus   @default(PENDING)
+  planType       PlanType
+  productSlug    String?
+  durationMonths Int             @default(1)
+  transactionId  String?         @unique
+  verifiedAt     DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
+model SubscriptionProduct {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  provider    String
+  description String
+  category    String
+  accent      String
+  rgb         String
+  badge       String?
+  isFeatured  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  durations   Json
+  features    Json
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteContent {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  label     String
+  value     String
+  section   String   @default("general")
+  updatedAt DateTime @updatedAt
+}
